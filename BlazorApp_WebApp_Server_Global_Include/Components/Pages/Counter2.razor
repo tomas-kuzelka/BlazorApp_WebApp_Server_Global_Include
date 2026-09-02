@@ -1,0 +1,36 @@
+﻿@page "/counter2"
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+    private static int currentCount = 0;
+
+    private static event EventHandler CountChanged;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+        CountChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RefreshCount(object sender, EventArgs e) 
+        => InvokeAsync(StateHasChanged);
+    
+    protected override Task OnInitializedAsync()
+    {
+        CountChanged += RefreshCount;
+        return base.OnInitializedAsync();
+    }
+
+    public void Dispose()
+    {
+        CountChanged -= RefreshCount;
+    }
+
+}

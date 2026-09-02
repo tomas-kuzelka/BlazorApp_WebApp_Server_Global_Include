@@ -1,0 +1,22 @@
+﻿@page "/counter3"
+@* @using BlazorApp_WebApp_Server_Global_Include.Code;*@
+@* Inject the shared counter instance *@
+@inject SharedCounter Counter
+
+<PageTitle>Counter 3</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @Counter.Count</p>
+
+<button class="btn btn-primary" @onclick="Counter.Increment">Click me</button>
+
+@code {
+    // Přidání obsluhy události při inicializaci komponenty
+    protected override void OnInitialized()
+        => Counter.CountChanged += OnChanged;
+    // Obsluha události, která aktualizuje stav komponenty
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+    // Odstranění obsluhy události při zničení komponenty
+    public void Dispose() => Counter.CountChanged -= OnChanged;
+}
