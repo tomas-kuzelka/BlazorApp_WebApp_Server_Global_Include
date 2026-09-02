@@ -1,0 +1,70 @@
+﻿@page "/kostka"
+@inject BlazorApp_WebApp_Server_Global_Include.Code.SharedCounter SharedCounter
+
+<PageTitle>Hod kostkou</PageTitle>
+
+<div class="container mt-3" style="max-width: 500px;">
+    <h3 class="mb-3">Hod kostkou</h3>
+
+    <!-- Informace o sdíleném počítadle z projektu -->
+    <div class="alert alert-info py-2 d-flex justify-content-between align-items-center">
+        <span>Celkový počet akcí v aplikaci (SharedCounter):</span>
+        <span class="badge bg-primary fs-6">@SharedCounter.Count</span>
+    </div>
+
+    <div class="card p-4 shadow-sm text-center">
+        <div class="mb-3 text-start">
+            <label class="form-label fw-bold">Typ kostky:</label>
+            <select class="form-select" @bind="diceSides">
+                <option value="6">Klasická kostka (k6: 1–6)</option>
+                <option value="10">Desetistěnná kostka (k10: 1–10)</option>
+                <option value="20">Dvacetistěnná kostka (k20: 1–20)</option>
+                <option value="100">Procentuální kostka (k100: 1–100)</option>
+            </select>
+        </div>
+
+        <div class="my-4">
+            <div class="display-1 fw-bold text-primary">
+                @(currentRoll.HasValue ? currentRoll.Value.ToString() : "-")
+            </div>
+            <small class="text-muted">Poslední výsledek</small>
+        </div>
+
+        <button class="btn btn-primary btn-lg w-100" @onclick="RollDice">
+            Hodit kostkou
+        </button>
+
+        @if (rollHistory.Any())
+        {
+            <div class="mt-4 text-start">
+                <h6>Historie posledních hodů:</h6>
+                <ul class="list-group list-group-flush">
+                    @foreach (var roll in rollHistory.Take(5))
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>Kostka k@(roll.Sides)</span>
+                            <span class="badge bg-secondary rounded-pill fs-6">@roll.Value</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private int diceSides = 6;
+    private int? currentRoll;
+    private List<(int Sides, int Value)> rollHistory = new();
+    private static readonly Random random = new();
+
+    private void RollDice()
+    {
+        // 1. Vygenerování náhodného čísla pro lokální hod
+        currentRoll = random.Next(1, diceSides + 1);
+        rollHistory.Insert(0, (diceSides, currentRoll.Value));
+
+        // 2. Inkrementace globálního serverového stavu v SharedCounter
+        SharedCounter.Increment();
+    }
+}

@@ -8,7 +8,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // Add the SharedCounter service as a singleton
-builder.Services.AddSingleton<SharedCounter>();
+builder.Services
+    .AddSingleton<SharedDiceService>()
+    .AddSingleton<SharedCounter>();
 
 var app = builder.Build();
 

@@ -1,0 +1,91 @@
+﻿@page "/kostka2"
+@inject SharedDiceService DiceService
+@implements IDisposable
+
+<PageTitle>Globální hod kostkou</PageTitle>
+
+<div class="container mt-3" style="max-width: 520px;">
+    <h3 class="mb-3">Týmový hod kostkou</h3>
+
+    <!-- Sekce: Globální stav ze serveru -->
+    <div class="alert alert-info shadow-sm mb-4">
+        <h6 class="alert-heading fw-bold mb-1">Poslední globální hod napříč všemi uživateli:</h6>
+        @if (DiceService.LastRoll.HasValue)
+        {
+            <div class="d-flex align-items-center justify-content-between mt-2">
+                <div>
+                    <strong>@DiceService.LastPlayer</strong> hodil:
+                    <span class="badge bg-primary fs-5 ms-2">@DiceService.LastRoll.Value</span>
+                </div>
+                <small class="text-muted">@DiceService.RolledAt?.ToString("HH:mm:ss")</small>
+            </div>
+        }
+        else
+        {
+            <span class="text-muted">Zatím nikdo nehodil. Buďte první!</span>
+        }
+    </div>
+
+    <!-- Karta pro provedení vlastního hodu -->
+    <div class="card p-4 shadow-sm text-center">
+        <div class="mb-3 text-start">
+            <label class="form-label fw-bold">Vaše přezdívka:</label>
+            <input type="text" class="form-control" @bind="playerName" placeholder="Např. Tomáš" />
+        </div>
+
+        <div class="mb-3 text-start">
+            <label class="form-label fw-bold">Typ kostky:</label>
+            <select class="form-select" @bind="diceSides">
+                <option value="6">Klasická kostka (k6: 1–6)</option>
+                <option value="10">Desetistěnná kostka (k10: 1–10)</option>
+                <option value="20">Dvacetistěnná kostka (k20: 1–20)</option>
+                <option value="100">Procentuální kostka (k100: 1–100)</option>
+            </select>
+        </div>
+
+        <div class="my-3">
+            <div class="display-1 fw-bold text-primary">
+                @(myLastRoll.HasValue ? myLastRoll.Value.ToString() : "-")
+            </div>
+            <small class="text-muted">Můj poslední hod</small>
+        </div>
+
+        <button class="btn btn-primary btn-lg w-100" @onclick="RollDice">
+            Hodit a odeslat všem
+        </button>
+    </div>
+</div>
+
+@code {
+    private string playerName = "Hráč 1";
+    private int diceSides = 6;
+    private int? myLastRoll;
+    private static readonly Random random = new();
+
+    protected override void OnInitialized()
+    {
+        // Přihlášení k odběru události ze singleton služby
+        DiceService.OnChange += HandleGlobalChange;
+    }
+
+    private void RollDice()
+    {
+        myLastRoll = random.Next(1, diceSides + 1);
+
+        // Zápis do sdílené služby (upozorní všechny připojené klienty)
+        DiceService.BroadcastRoll(playerName, myLastRoll.Value);
+    }
+
+    private async void HandleGlobalChange()
+    {
+        // V Blazor Serveru událost přichází z jiného vlákna/okruhu,
+        // proto je nutné použít InvokeAsync pro bezpečné překreslení UI
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        // Zamezení memory leakům při odchodu ze stránky
+        DiceService.OnChange -= HandleGlobalChange;
+    }
+}
